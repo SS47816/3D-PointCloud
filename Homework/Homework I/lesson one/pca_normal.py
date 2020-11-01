@@ -5,18 +5,39 @@ import os
 import numpy as np
 from pyntcloud import PyntCloud
 
-# 功能：计算PCA的函数
-# 输入：
-#     data：点云，NX3的矩阵
-#     correlation：区分np的cov和corrcoef，不输入时默认为False
-#     sort: 特征值排序，排序是为了其他功能方便使用，不输入时默认为True
-# 输出：
-#     eigenvalues：特征值
-#     eigenvectors：特征向量
+
 def PCA(data, correlation=False, sort=True):
+    """ Calculate PCA
+
+    Parameters
+    ----------
+        data：点云，NX3的矩阵
+        correlation：区分np的cov和corrcoef，不输入时默认为False
+        sort: 特征值排序，排序是为了其他功能方便使用，不输入时默认为True
+    
+    Returns
+    -------
+        eigenvalues：特征值
+        eigenvectors：特征向量
+
+    """
+    
     # 作业1
     # 屏蔽开始
     
+    # Converto to numpy array
+    N = data.shape[0]
+    X = data.to_numpy()
+
+    # Normalization
+    X_ = X - np.mean(X, axis=0)
+
+    # Get function
+    func = np.cov if not correlation else np.corrcoef
+    H = func(X_, rowvar=False, bias=True)
+
+    # Compute eigenvalues and eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eig(H)
 
     # 屏蔽结束
 
@@ -36,13 +57,14 @@ def main():
     # filename = os.path.join(root_dir, cat[cat_index],'train', cat[cat_index]+'_0001.ply') # 默认使用第一个点云
 
     # 加载原始点云
-    point_cloud_pynt = PyntCloud.from_file("/Users/renqian/Downloads/program/cloud_data/11.ply")
+    # point_cloud_pynt = PyntCloud.from_file("/Users/renqian/Downloads/program/cloud_data/11.ply")
+    point_cloud_pynt = PyntCloud.from_file("../ /cloud_data/11.ply")
     point_cloud_o3d = point_cloud_pynt.to_instance("open3d", mesh=False)
     # o3d.visualization.draw_geometries([point_cloud_o3d]) # 显示原始点云
 
     # 从点云中获取点，只对点进行处理
     points = point_cloud_pynt.points
-    print('total points number is:', points.shape[0])
+    print('total number of points is:', points.shape[0])
 
     # 用PCA分析点云主方向
     w, v = PCA(points)

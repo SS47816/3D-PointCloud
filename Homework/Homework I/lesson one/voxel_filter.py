@@ -13,7 +13,7 @@ def voxel_filter(point_cloud, leaf_size):
     filtered_points = []
     # 作业3
     # 屏蔽开始
-
+    
  
     # 屏蔽结束
 
