@@ -5,25 +5,25 @@ import os
 import numpy as np
 from pyntcloud import PyntCloud
 
-# 
-def voxel_filter(point_cloud, leaf_size, method='centroid'):
+def voxel_filter(point_cloud: PyntCloud.points, leaf_size: int, method: str='centroid') -> np.array:
     """ 对点云进行voxel滤波
     
     Parameters
     ----------
-        point_cloud：输入点云
-        leaf_size: voxel尺寸
+        point_cloud(PyntCloud.points): 输入点云
+        leaf_size(int): voxel尺寸
+        method(str): select method 'centroid' or 'random'
 
     Returns
     ----------
-        filtered_points: filtered pointcloud
+        filtered_points(np.array): filtered pointcloud
 
     """
     
     filtered_points = []
     # 作业3
     # 屏蔽开始
-    
+
     # Define ROI
     (p_min, p_max) = (point_cloud.min(), point_cloud.max())
     (D_x, D_y, D_z) = (
@@ -32,7 +32,7 @@ def voxel_filter(point_cloud, leaf_size, method='centroid'):
         np.ceil((p_max['z'] - p_min['z']) / leaf_size).astype(np.int),
     )
     
-    def classifier(x, y, z): 
+    def classifier(x: float, y: float, z: float) -> int: 
         """ assign given 3D point to voxel grid
         
         Parameters
@@ -52,16 +52,16 @@ def voxel_filter(point_cloud, leaf_size, method='centroid'):
             np.floor((z - p_min['z']) / leaf_size).astype(np.int),
         )
 
-        idx = i_x + D_x * i_y + D_x * D_y * i_z
+        idx = i_x + i_y*D_x + i_z*D_x*D_y
 
         return idx
 
-    # assign to voxel grid:
+    # Assign points to voxel grids:
     point_cloud['voxel_grid_id'] = point_cloud.apply(
         lambda row: classifier(row['x'], row['y'], row['z']), axis = 1
     )
     
-    # centroid:
+    # Select between methods
     if method == 'centroid':
         filtered_points = point_cloud.groupby(['voxel_grid_id']).mean().to_numpy()
     elif method == 'random':
@@ -90,7 +90,7 @@ def main():
     # o3d.visualization.draw_geometries([point_cloud_o3d]) # 显示原始点云
 
     # 调用voxel滤波函数，实现滤波
-    filtered_cloud = voxel_filter(point_cloud_pynt.points, 100.0)
+    filtered_cloud = voxel_filter(point_cloud_pynt.points, 5.0, 'centroid')
     point_cloud_o3d.points = o3d.utility.Vector3dVector(filtered_cloud)
     # 显示滤波后的点云
     o3d.visualization.draw_geometries([point_cloud_o3d])
