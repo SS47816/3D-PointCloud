@@ -16,7 +16,7 @@ def PCA(data, correlation=False, sort=True):
         sort: 特征值排序，排序是为了其他功能方便使用，不输入时默认为True
     
     Returns
-    -------
+    ----------
         eigenvalues：特征值
         eigenvectors：特征向量
 
