@@ -6,19 +6,19 @@ import numpy as np
 from pyntcloud import PyntCloud
 
 
-def PCA(data, correlation=False, sort=True):
+def PCA(data: PyntCloud.points, correlation: bool=False, sort: bool=True) -> np.array:
     """ Calculate PCA
 
     Parameters
     ----------
-        data：点云，NX3的矩阵
-        correlation：区分np的cov和corrcoef，不输入时默认为False
-        sort: 特征值排序，排序是为了其他功能方便使用，不输入时默认为True
+        data(PyntCloud.points): 点云，NX3的矩阵
+        correlation(bool): 区分np的cov和corrcoef，不输入时默认为False
+        sort(bool): 特征值排序，排序是为了其他功能方便使用，不输入时默认为True
     
     Returns
     ----------
-        eigenvalues：特征值
-        eigenvectors：特征向量
+        eigenvalues(np.array): 特征值
+        eigenvectors(np.array): 特征向量
 
     """
     
@@ -48,17 +48,19 @@ def PCA(data, correlation=False, sort=True):
 
     return eigenvalues, eigenvectors
 
-def get_pca_o3d(w, v, points):
+def get_pca_o3d(w: np.array, v: np.array, points: PyntCloud.points) -> o3d.geometry.LineSet:
     """ Build open3D geometry for PCA
     Parameters
     ----------
-        w: eigenvalues in descending order
-        v: eigenvectors in descending order
+        w(np.array): eigenvalues in descending order
+        v(np.array): eigenvectors in descending order
+        points(np.array): pointcloud
     
     Returns
     ----------
-        pca_set: o3d line set for pca visualization
+        pca_set(o3d.geometry.LineSet): o3d line set for pca visualization
     """
+    
     # calculate centroid & variation along main axis:
     centroid = points.mean()
     projs = np.dot(points.to_numpy(), v[:,0])
