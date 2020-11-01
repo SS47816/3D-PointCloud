@@ -48,6 +48,44 @@ def PCA(data, correlation=False, sort=True):
 
     return eigenvalues, eigenvectors
 
+def get_pca_o3d(w, v, points):
+    """ Build open3D geometry for PCA
+    Parameters
+    ----------
+        w: eigenvalues in descending order
+        v: eigenvectors in descending order
+    
+    Returns
+    ----------
+        pca_set: o3d line set for pca visualization
+    """
+    # calculate centroid & variation along main axis:
+    centroid = points.mean()
+    projs = np.dot(points.to_numpy(), v[:,0])
+    scale = projs.max() - projs.min()
+
+    points = centroid.to_numpy() + np.vstack(
+        (
+            np.asarray([0.0, 0.0, 0.0]),
+            scale * v.T
+        )
+    ).tolist()
+    lines = [
+        [0, 1],
+        [0, 2],
+        [0, 3]
+    ]
+    # from the largest to the smallest: RGB
+    colors = np.identity(3).tolist()
+
+    # build pca line set:
+    pca_o3d = o3d.geometry.LineSet(
+        points=o3d.utility.Vector3dVector(points),
+        lines=o3d.utility.Vector2iVector(lines),
+    )
+    pca_o3d.colors = o3d.utility.Vector3dVector(colors)
+
+    return pca_o3d
 
 def main():
     # 指定点云路径
@@ -71,7 +109,9 @@ def main():
     point_cloud_vector = v[:, 2] #点云主方向对应的向量
     print('the main orientation of this pointcloud is: ', point_cloud_vector)
     # TODO: 此处只显示了点云，还没有显示PCA
-    o3d.visualization.draw_geometries([point_cloud_o3d])
+    # o3d.visualization.draw_geometries([point_cloud_o3d])
+    pca_o3d = get_pca_o3d(w, v, points)
+    o3d.visualization.draw_geometries([pca_o3d])
     
     # # 循环计算每个点的法向量
     # pcd_tree = o3d.geometry.KDTreeFlann(point_cloud_o3d)
