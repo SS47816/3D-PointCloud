@@ -27,9 +27,12 @@ def PCA(data: PyntCloud.points, correlation: bool=False, sort: bool=True) -> np.
     
     # Normalize X by the center
     X_ = data - np.mean(data, axis=0)
-    # Compute SVD
+    # Compute SVD of H (Eigenvector of X = Eigenvector of H)
     H = np.dot(X_.T, X_)
-    # Compute Eigenvectors
+    # Get U, Sigma, V* (M = U Sigma V*)
+    # V.columns are eigenvectors of M*M
+    # U.columns are eigenvectors of MM*
+    # U.diagonal elements are non-negative roots of the eigenvalues of MM* and M*M
     eigenvectors, eigenvalues, _ = np.linalg.svd(H)
 
     ### Solution V1 ###
