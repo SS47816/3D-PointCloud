@@ -25,19 +25,23 @@ def PCA(data: PyntCloud.points, correlation: bool=False, sort: bool=True) -> np.
     # 作业1
     # 屏蔽开始
     
-    # Converto to numpy array
-    N = data.shape[0]
-    X = data.to_numpy()
+    # Normalize X by the center
+    X_ = data - np.mean(data, axis=0)
+    # Compute SVD
+    H = np.dot(X_.T, X_)
+    # Compute Eigenvectors
+    eigenvectors, eigenvalues, _ = np.linalg.svd(H)
 
-    # Normalization
-    X_ = X - np.mean(X, axis=0)
-
-    # Get function
-    func = np.cov if not correlation else np.corrcoef
-    H = func(X_, rowvar=False, bias=True)
-
-    # Compute eigenvalues and eigenvectors
-    eigenvalues, eigenvectors = np.linalg.eig(H)
+    ### Solution V1 ###
+    # N = data.shape[0]
+    # X = data.to_numpy()
+    # # Normalization
+    # X_ = X - np.mean(X, axis=0)
+    # # Get function
+    # func = np.cov if not correlation else np.corrcoef
+    # H = func(X_, rowvar=False, bias=True)
+    # # Compute eigenvalues and eigenvectors
+    # eigenvalues, eigenvectors = np.linalg.eig(H)
 
     # 屏蔽结束
 
