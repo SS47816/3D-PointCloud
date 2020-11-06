@@ -44,76 +44,6 @@ def PCA(data: PyntCloud.points, correlation: bool=False, sort: bool=True) -> np.
 
     return eigenvalues, eigenvectors
 
-def get_pca_o3d(w: np.array, v: np.array, points: PyntCloud.points) -> o3d.geometry.LineSet:
-    """ Build open3D geometry for PCA
-    Parameters
-    ----------
-        w(np.array): eigenvalues in descending order
-        v(np.array): eigenvectors in descending order
-        points(np.array): pointcloud
-    
-    Returns
-    ----------
-        pca_set(o3d.geometry.LineSet): o3d line set for pca visualization
-    """
-    
-    # calculate centroid & variation along main axis:
-    centroid = points.mean()
-    projs = np.dot(points.to_numpy(), v[:,0])
-    scale = projs.max() - projs.min()
-
-    points = centroid.to_numpy() + np.vstack(
-        (
-            np.asarray([0.0, 0.0, 0.0]),
-            scale * v.T
-        )
-    ).tolist()
-    lines = [
-        [0, 1],
-        [0, 2],
-        [0, 3]
-    ]
-    # from the largest to the smallest: RGB
-    colors = np.identity(3).tolist()
-
-    # build pca line set:
-    pca_o3d = o3d.geometry.LineSet(
-        points=o3d.utility.Vector3dVector(points),
-        lines=o3d.utility.Vector2iVector(lines),
-    )
-    pca_o3d.colors = o3d.utility.Vector3dVector(colors)
-
-    return pca_o3d
-
-def get_surface_normals_o3d(normals: np.ndarray, points: PyntCloud.points, scale: float=2):
-    """ Build open3D geometry for surface normals
-    Parameters
-    ----------
-        normals(numpy.ndarray): surface normals for each point
-        points(PyntCloud.points): points in the point cloud
-        scale(float): the length of each surface normal vector
-    Returns
-    ----------
-        surface_normals_o3d: o3d line set for surface normal visualization
-    """
-    # total number of points:
-    N = points.shape[0]
-
-    points = np.vstack(
-        (points.to_numpy(), points.to_numpy() + scale * normals)
-    )
-    lines = [[i, i+N] for i in range(N)]
-    colors = np.zeros((N, 3)).tolist()
-
-    # build pca line set:
-    surface_normals_o3d = o3d.geometry.LineSet(
-        points=o3d.utility.Vector3dVector(points),
-        lines=o3d.utility.Vector2iVector(lines),
-    )
-    surface_normals_o3d.colors = o3d.utility.Vector3dVector(colors)
-
-    return surface_normals_o3d
-
 def main():
     # 指定点云路径
     path = '../../../modelnet40_normal_resampled/'
@@ -148,8 +78,6 @@ def main():
         pc_view.colors = o3d.utility.Vector3dVector([[0,0,0]])
         pr_view = o3d.geometry.PointCloud(points=o3d.utility.Vector3dVector(pr_data))
         # o3d.visualization.draw_geometries([pc_view, axis, pr_view])
-        pca_o3d = get_pca_o3d(w, v, points)
-        # o3d.visualization.draw_geometries([point_cloud_o3d, pca_o3d])
         
         # 作业2
         # 屏蔽开始
@@ -180,7 +108,7 @@ def main():
         )
         surface_normals_o3d.colors = o3d.utility.Vector3dVector(colors)
 
-        o3d.visualization.draw_geometries([pc_view, axis, pr_view, surface_normals_o3d]) # pc_view, point_cloud_o3d, 
+        o3d.visualization.draw_geometries([pc_view, axis, pr_view, surface_normals_o3d]) # point_cloud_o3d, 
 
 
 if __name__ == '__main__':
