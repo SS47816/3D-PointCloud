@@ -1,6 +1,10 @@
 # Homework 1
 
-## Task 1 PCA
+> by SS47816
+
+
+
+## Task 1: PCA
 
 Implementation of PCA in `pca_normal.py`:
 ```python
@@ -23,4 +27,28 @@ eigenvectors, eigenvalues, _ = np.linalg.svd(H)
     * Sigma, whose diagonal elements are non-negative roots of the eigenvalues of MM* and M*M
     * V, whose are eigenvectors of M*M
 
-## Task 2 Normal Vector Estimation for points
+
+
+## Task 2: Normal Vector Estimation for points
+
+Implementation of Normal Vector Estimation in `pca_normal.py`:
+```python
+pcd_tree = o3d.geometry.KDTreeFlann(point_cloud_o3d)
+normals = []
+N = pointcloud.shape[0]
+for index in range(N):
+    [_, idx, _] = pcd_tree.search_knn_vector_3d(pc_view.points[index], 21)
+    neighbor_pc = np.asarray(pc_view.points)[idx]
+    _, v = PCA(neighbor_pc)
+    normals.append(v[:, 2])
+```
+
+
+
+## Visualization of Task 1 & 2
+
+![hw1-airplane-01](pics/hw1-airplane-01.png)
+
+![hw1-box-01](pics/hw1-box-01.png)
+
+![hw1-bed-01](pics/hw1-bed-01.png)
