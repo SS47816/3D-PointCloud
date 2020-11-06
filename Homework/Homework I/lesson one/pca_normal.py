@@ -84,12 +84,15 @@ def main():
         # 屏蔽开始
         # 循环计算每个点的法向量
         # 由于最近邻搜索是第二章的内容，所以此处允许直接调用open3d中的函数
+        # Feed the pointcloud into a kdtree structure
         pcd_tree = o3d.geometry.KDTreeFlann(point_cloud_o3d)
         normals = []
         N = pointcloud.shape[0]
         for index in range(N):
+            # For each point, search for its nearest k neighbors
             [_, idx, _] = pcd_tree.search_knn_vector_3d(pc_view.points[index], 21)
             neighbor_pc = np.asarray(pc_view.points)[idx]
+            # Compute the eigenvectors for its neighbors
             _, v = PCA(neighbor_pc)
             normals.append(v[:, 2])
 

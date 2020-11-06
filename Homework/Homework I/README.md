@@ -43,7 +43,12 @@ for index in range(N):
     normals.append(v[:, 2])
 ```
 
-
+1. Feed the model pointcloud into a KD-Tree structure for further processing
+2. For each point:
+   1. find its nearest k neighboring points
+   2. Cluster these neighboring points and compute its eigenvector
+   3. Append the eigenvector into a list
+3. Visualize it
 
 ## Visualization of Task 1 & 2
 
