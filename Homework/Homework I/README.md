@@ -29,7 +29,7 @@ eigenvectors, eigenvalues, _ = np.linalg.svd(H)
 
 
 
-## Task 2: Normal Vector Estimation for points
+## Task 2: Surface Normal Estimation
 
 Implementation of Normal Vector Estimation in `pca_normal.py`:
 ```python
@@ -46,16 +46,50 @@ for index in range(N):
 1. Feed the model pointcloud into a KD-Tree structure for further processing
 2. For each point:
    1. find its nearest k neighboring points
-   2. Cluster these neighboring points and compute its eigenvector
-   3. Append the eigenvector into a list
+   2. Cluster these neighboring points and perform PCA on this region
+   3. Select the least significant eigenvector and append it into a list
 3. Visualize it
 
 ## Visualization of Task 1 & 2
 
 ![hw1-airplane-01](pics/hw1-airplane-01.png)
 
-![hw1-box-01](pics/hw1-box-01.png)
+![hw1-bathtub-01](pics/hw1-bathtub-01.png)
 
 ![hw1-bed-01](pics/hw1-bed-01.png)
 
-## Task 3: 
+## Task 3: Voxel Grid Down-sampling
+
+Implementation of Normal Vector Estimation in `voxel_filter.py`:
+
+```python
+x_min, x_max = np.min(point_cloud[:, 0]), np.max(point_cloud[:, 0])
+y_min, y_max = np.min(point_cloud[:, 1]), np.max(point_cloud[:, 1])
+z_min, z_max = np.min(point_cloud[:, 2]), np.max(point_cloud[:, 2])
+
+Dx, Dy, Dz = (x_max - x_min)/leaf_size, (y_max - y_min)/leaf_size, (z_max - z_min)/leaf_size
+
+min_vec = np.array([x_min, y_min, z_min])
+indices = np.floor((point_cloud.copy() - min_vec)/leaf_size)
+index = indices[:, 0] + indices[:, 1]*Dx + indices[:, 2]*Dx*Dy
+
+for i in np.unique(index):
+    voxel_points = point_cloud[index==i]
+    if method == 'centroid':
+        filtered_points.append(np.mean(voxel_points, axis=0))
+    else:
+        filtered_points.append(voxel_points[np.random.choice(a=voxel_points.shape[0])])
+```
+
+1. Compute the size of the Region of Interest
+2. Calculate the voxel index for each point
+3. Find the points belong to the same voxel grid
+4. Determine the final point based on method specified (either `centroid` or `random`)
+
+## Visualization of Task 3
+
+![hw1-airplane-02](pics/hw1-airplane-02.png)
+
+![hw1-bathtub-02](pics/hw1-bathtub-02.png)
+
+![hw1-bed-02](pics/hw1-bed-02.png)
