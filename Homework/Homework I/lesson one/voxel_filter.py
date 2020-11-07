@@ -3,14 +3,14 @@
 import open3d as o3d 
 import os
 import numpy as np
-from pyntcloud import PyntCloud
+# from pyntcloud import PyntCloud
 
-def voxel_filter(point_cloud: PyntCloud.points, leaf_size: int, method: str='centroid') -> np.array:
+def voxel_filter(point_cloud: np.ndarray, leaf_size: float, method: str='centroid') -> np.array:
     """ 对点云进行voxel滤波
     
     Parameters
     ----------
-        point_cloud(PyntCloud.points): 输入点云
+        point_cloud(np.ndarray): 输入点云
         leaf_size(int): voxel尺寸
         method(str): select method 'centroid' or 'random'
 
@@ -24,76 +24,54 @@ def voxel_filter(point_cloud: PyntCloud.points, leaf_size: int, method: str='cen
     # 作业3
     # 屏蔽开始
 
-    # Define ROI
-    (p_min, p_max) = (point_cloud.min(), point_cloud.max())
-    (D_x, D_y, D_z) = (
-        np.ceil((p_max['x'] - p_min['x']) / leaf_size).astype(np.int),
-        np.ceil((p_max['y'] - p_min['y']) / leaf_size).astype(np.int),
-        np.ceil((p_max['z'] - p_min['z']) / leaf_size).astype(np.int),
-    )
-    
-    def classifier(x: float, y: float, z: float) -> int: 
-        """ assign given 3D point to voxel grid
-        
-        Parameters
-        ----------
-            x(float): X
-            y(float): Y
-            z(float): Z
+    x_min, x_max = np.min(point_cloud[:, 0]), np.max(point_cloud[:, 0])
+    y_min, y_max = np.min(point_cloud[:, 1]), np.max(point_cloud[:, 1])
+    z_min, z_max = np.min(point_cloud[:, 2]), np.max(point_cloud[:, 2])
 
-        Return
-        ----------
-            idx(int): voxel grid index
-        """
+    Dx, Dy, Dz = (x_max - x_min)/leaf_size, (y_max - y_min)/leaf_size, (z_max - z_min)/leaf_size
 
-        (i_x, i_y, i_z) = (
-            np.floor((x - p_min['x']) / leaf_size).astype(np.int),
-            np.floor((y - p_min['y']) / leaf_size).astype(np.int),            
-            np.floor((z - p_min['z']) / leaf_size).astype(np.int),
-        )
+    min_vec = np.array([x_min, y_min, z_min])
+    indices = np.floor((point_cloud.copy() - min_vec)/leaf_size)
+    index = indices[:, 0] + indices[:, 1]*Dx + indices[:, 2]*Dx*Dy
 
-        idx = i_x + i_y*D_x + i_z*D_x*D_y
-
-        return idx
-
-    # Assign points to voxel grids:
-    point_cloud['voxel_grid_id'] = point_cloud.apply(
-        lambda row: classifier(row['x'], row['y'], row['z']), axis = 1
-    )
-    
-    # Select between methods
-    if method == 'centroid':
-        filtered_points = point_cloud.groupby(['voxel_grid_id']).mean().to_numpy()
-    elif method == 'random':
-        filtered_points = point_cloud.groupby(['voxel_grid_id']).apply(
-            lambda x: x[['x', 'y', 'z']].sample(1)
-        ).to_numpy()
-
+    for i in np.unique(index):
+        voxel_points = point_cloud[index==i]
+        if method == 'centroid':
+            filtered_points.append(np.mean(voxel_points, axis=0))
+        else:
+            filtered_points.append(voxel_points[np.random.choice(a=voxel_points.shape[0])])
+            
     # 屏蔽结束
 
+    # Shift the coordintes of the filtered cloud (for visualization)
+    filtered_points = np.add(filtered_points, [0., 1.2*Dy*leaf_size, 0.])
     # 把点云格式改成array，并对外返回
     filtered_points = np.array(filtered_points, dtype=np.float64)
     return filtered_points
 
 def main():
-    # # 从ModelNet数据集文件夹中自动索引路径，加载点云
-    # cat_index = 10 # 物体编号，范围是0-39，即对应数据集中40个物体
-    # root_dir = '../../../ModelNet40' # 数据集路径
-    # cat = os.listdir(root_dir)
-    # filename = os.path.join(root_dir, cat[cat_index],'train', cat[cat_index]+'_0001.ply') # 默认使用第一个点云
+    # 指定点云路径
+    path = '../../../modelnet40_normal_resampled/'
+    shape_name_list = np.loadtxt(os.path.join(path, 'modelnet40_shape_names.txt') if os.path.isdir(path) else None,dtype=str)
 
-    # 加载自己的点云文件
-    point_cloud_pynt = PyntCloud.from_file("../../../ModelNet40/airplane/train/airplane_0001.ply")
+    for item in shape_name_list:
+        # Import model
+        filename = os.path.join(path, item, item+'_0001.txt')
+        pointcloud = np.loadtxt(filename, delimiter=',')[:, 0:3]
+        print('total points number is:', pointcloud.shape[0])
+        
+        # Convert to Open3D formats
+        point_cloud_o3d = o3d.geometry.PointCloud()
+        point_cloud_o3d.points = o3d.utility.Vector3dVector(pointcloud)
 
-    # 转成open3d能识别的格式
-    point_cloud_o3d = point_cloud_pynt.to_instance("open3d", mesh=False)
-    # o3d.visualization.draw_geometries([point_cloud_o3d]) # 显示原始点云
+        # 调用voxel滤波函数，实现滤波
+        filtered_cloud = voxel_filter(pointcloud, 0.08, 'centroid')
+        print('Number of points in the filtered pointcloud:', filtered_cloud.shape[0])
 
-    # 调用voxel滤波函数，实现滤波
-    filtered_cloud = voxel_filter(point_cloud_pynt.points, 5.0, 'centroid')
-    point_cloud_o3d.points = o3d.utility.Vector3dVector(filtered_cloud)
-    # 显示滤波后的点云
-    o3d.visualization.draw_geometries([point_cloud_o3d])
+        # 显示滤波后的点云
+        filtered_cloud_o3d = o3d.geometry.PointCloud()
+        filtered_cloud_o3d.points = o3d.utility.Vector3dVector(filtered_cloud)
+        o3d.visualization.draw_geometries([point_cloud_o3d, filtered_cloud_o3d])
 
 if __name__ == '__main__':
     main()

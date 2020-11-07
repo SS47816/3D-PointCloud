@@ -57,3 +57,5 @@ for index in range(N):
 ![hw1-box-01](pics/hw1-box-01.png)
 
 ![hw1-bed-01](pics/hw1-bed-01.png)
+
+## Task 3: 
