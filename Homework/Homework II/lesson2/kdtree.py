@@ -165,7 +165,7 @@ def kdtree_knn_search(root: Node, db: np.ndarray, result_set: KNNResultSet, quer
             kdtree_knn_search(root.right, db, result_set, query) # Search the other side
     # If the query point is on the right hand side of the splitting plane
     else:
-        kdtree_knn_search(root.right, db, result_set, query) # Search left
+        kdtree_knn_search(root.right, db, result_set, query) # Search right
         # If the current worst distance reaches beyond the splitting plane
         if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
             kdtree_knn_search(root.left, db, result_set, query) # Search the other side
@@ -197,6 +197,18 @@ def kdtree_radius_search(root: Node, db: np.ndarray, result_set: RadiusNNResultS
     # 作业3
     # 提示：通过递归的方式实现搜索
     # 屏蔽开始
+    # If the query point is on the left hand side of the splitting plane
+    if query[root.axis] <= root.value:
+        kdtree_radius_search(root.left, db, result_set, query) # Search left
+        # If the current worst distance reaches beyond the splitting plane
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_radius_search(root.right, db, result_set, query) # Search the other side
+    # If the query point is on the right hand side of the splitting plane
+    else:
+        kdtree_radius_search(root.right, db, result_set, query) # Search right
+        # If the current worst distance reaches beyond the splitting plane
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_radius_search(root.left, db, result_set, query) # Search the other side
 
     # 屏蔽结束
 
