@@ -31,9 +31,11 @@ def main():
     k = 8
     radius = 1
 
-    root_dir = '/Users/renqian/cloud_lesson/kitti' # 数据集路径
-    cat = os.listdir(root_dir)
-    iteration_num = len(cat)
+    # root_dir = '../../' # 数据集路径
+    # cat = os.listdir(root_dir)
+    # iteration_num = len(cat)
+    iteration_num = 1
+    filename = '../000000.bin'
 
     print("octree --------------")
     construction_time_sum = 0
@@ -41,7 +43,7 @@ def main():
     radius_time_sum = 0
     brute_time_sum = 0
     for i in range(iteration_num):
-        filename = os.path.join(root_dir, cat[i])
+        # filename = os.path.join(root_dir, cat[i])
         db_np = read_velodyne_bin(filename)
 
         begin_t = time.time()
@@ -76,7 +78,7 @@ def main():
     radius_time_sum = 0
     brute_time_sum = 0
     for i in range(iteration_num):
-        filename = os.path.join(root_dir, cat[i])
+        # filename = os.path.join(root_dir, cat[i])
         db_np = read_velodyne_bin(filename)
 
         begin_t = time.time()
