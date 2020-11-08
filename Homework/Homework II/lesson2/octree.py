@@ -202,6 +202,7 @@ def octree_radius_search_fast(root: Octant, db: np.ndarray, result_set: RadiusNN
             result_set.add_point(diff[i], root.point_indices[i])
         return inside(query, result_set.worstDist(), root)
 
+    # Search in other children
     for c, child in enumerate(root.children):
         if child is None:
             continue
@@ -244,7 +245,7 @@ def octree_radius_search(root: Octant, db: np.ndarray, result_set: RadiusNNResul
             result_set.add_point(diff[i], root.point_indices[i])
         return inside(query, result_set.worstDist(), root)
 
-    # Find the nearst child
+    # Find the most relevant child first
     morton_code = 0
     if query[0] > root.center[0]:
         morton_code = morton_code | 1
@@ -253,9 +254,11 @@ def octree_radius_search(root: Octant, db: np.ndarray, result_set: RadiusNNResul
     if query[2] > root.center[2]:
         morton_code = morton_code | 4
 
+    # Determine if the search should stop
     if octree_radius_search(root.children[morton_code], db, result_set, query):
         return True
 
+    # Search in other children
     for c, child in enumerate(root.children):
         if child is None:
             continue
@@ -264,7 +267,6 @@ def octree_radius_search(root: Octant, db: np.ndarray, result_set: RadiusNNResul
             continue
         if octree_radius_search_fast(child, db, result_set, query):
             return True
-
     # 屏蔽结束
 
     # final check of if we can stop search
@@ -291,7 +293,28 @@ def octree_knn_search(root: Octant, db: np.ndarray, result_set: KNNResultSet, qu
 
     # 作业7
     # 屏蔽开始
-    
+    # Find the most relevant child first
+    morton_code = 0
+    if query[0] > root.center[0]:
+        morton_code = morton_code | 1
+    if query[1] > root.center[1]:
+        morton_code = morton_code | 2
+    if query[2] > root.center[2]:
+        morton_code = morton_code | 4
+
+    # Determine if the search should stop
+    if octree_radius_search(root.children[morton_code], db, result_set, query):
+        return True
+
+    # Search in other children
+    for c, child in enumerate(root.children):
+        if child is None:
+            continue
+        # If there's no overlap between the worst distance sphere and this octant
+        if not overlaps(query, result_set.worstDist(), child):
+            continue
+        if octree_radius_search_fast(child, db, result_set, query):
+            return True
     # 屏蔽结束
 
     # final check of if we can stop search
