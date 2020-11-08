@@ -66,7 +66,29 @@ def octree_recursive_build(root, db, center, extent, point_indices, leaf_size, m
     else:
         # 作业4
         # 屏蔽开始
-        
+        root.is_leaf = False
+        children_point_indices = [[] for i in range(8)]
+        # Find the region the point belongs to 
+        for point_idx in point_indices:
+            point_db = db[point_idx]
+            morton_code = 0
+            if point_db[0] > center[0]:
+                morton_code = morton_code | 1
+            if point_db[1] > center[1]:
+                morton_code = morton_code | 2
+            if point_db[2] > center[2]:
+                morton_code = morton_code | 4
+            children_point_indices[morton_code].append(point_idx)
+
+        factor = [-0.5, 0.5]
+        for i in range(8):
+            child_center_x = center[0] + factor[(i&1) > 0]*extent
+            child_center_y = center[1] + factor[(i&2) > 0]*extent
+            child_center_z = center[2] + factor[(i&4) > 0]*extent
+            child_extent = 0.5*extent
+            child_center = np.asarray([child_center_x, child_center_y, child_center_z])
+            root.children[i] = octree_recursive_build(root.children[i], db, child_center, child_extent, 
+                                                        children_point_indices[i], leaf_size, min_extent)
         # 屏蔽结束
     return root
 
