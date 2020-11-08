@@ -39,7 +39,7 @@ class Node:
 # 输出：
 #     key_sorted：排序后的键
 #     value_sorted：排序后的值
-def sort_key_by_vale(key, value):
+def sort_key_by_value(key, value):
     assert key.shape == value.shape
     assert len(key.shape) == 1
     sorted_idx = np.argsort(value)
@@ -68,12 +68,29 @@ def kdtree_recursive_build(root, db, point_indices, axis, leaf_size):
         root = Node(axis, None, None, None, point_indices)
 
     # determine whether to split into left and right
+    # If the num. of points is greater than the defined leaf_size, split
     if len(point_indices) > leaf_size:
         # --- get the split position ---
-        point_indices_sorted, _ = sort_key_by_vale(point_indices, db[point_indices, axis])  # M
+        point_indices_sorted, _ = sort_key_by_value(point_indices, db[point_indices, axis])  # M
         
         # 作业1
         # 屏蔽开始
+        # Get the point on the left hand side of the splitting plane
+        middle_left_idx = math.ceil(point_indices_sorted.shape[0]/2) - 1
+        middle_left_point_idx = point_indices_sorted[middle_left_idx]
+        middle_left_point_val = db[middle_left_point_idx, axis]
+        # Get the point on the right hand side of the splitting plane
+        middle_right_idx = middle_left_idx + 1
+        middle_right_point_idx = point_indices_sorted[middle_right_idx]
+        middle_right_point_val = db[middle_right_point_idx, axis]
+
+        # Assign the splitting value
+        root.value = 0.5*(middle_left_point_val + middle_right_point_val)
+        # Recursively build the left and right sections
+        root.left = kdtree_recursive_build(root.left, db, point_indices_sorted[0:middle_right_idx], 
+                                            axis_round_robin(axis, dim=db.shape[1]), leaf_size)
+        root.right = kdtree_recursive_build(root.right, db, point_indices_sorted[middle_right_idx:], 
+                                            axis_round_robin(axis, dim=db.shape[1]), leaf_size)
 
         # 屏蔽结束
     return root
