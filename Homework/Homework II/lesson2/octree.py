@@ -81,12 +81,15 @@ def octree_recursive_build(root, db, center, extent, point_indices, leaf_size, m
             children_point_indices[morton_code].append(point_idx)
 
         factor = [-0.5, 0.5]
+        # For all the 8 children:
         for i in range(8):
+            # Calculate the centers & extents
             child_center_x = center[0] + factor[(i&1) > 0]*extent
             child_center_y = center[1] + factor[(i&2) > 0]*extent
             child_center_z = center[2] + factor[(i&4) > 0]*extent
             child_extent = 0.5*extent
             child_center = np.asarray([child_center_x, child_center_y, child_center_z])
+            # Recursively build the children
             root.children[i] = octree_recursive_build(root.children[i], db, child_center, child_extent, 
                                                         children_point_indices[i], leaf_size, min_extent)
         # 屏蔽结束
@@ -183,7 +186,30 @@ def octree_radius_search_fast(root: Octant, db: np.ndarray, result_set: RadiusNN
     # 作业5
     # 提示：尽量利用上面的inside、overlaps、contains等函数
     # 屏蔽开始
-    
+    # If the worst distance sphere contains this octant
+    if contains(query, result_set.worstDist(), root):
+        leaf_points = db[root.point_indices, :]
+        diff = np.linalg.norm(np.expand_dims(query, 0) - leaf_points, axis=1)
+        for i in range(diff.shape[0]):
+            result_set.add_point(diff[i], root.point_indices[i])
+        return False
+
+    # If the octant is a leaf and there are points in it
+    if root.is_leaf and len(root.point_indices) > 0:
+        leaf_points = db[root.point_indices, :]
+        diff = np.linalg.norm(np.expand_dims(query, 0) - leaf_points, axis=1)
+        for i in range(diff.shape[0]):
+            result_set.add_point(diff[i], root.point_indices[i])
+        return inside(query, result_set.worstDist(), root)
+
+    for c, child in enumerate(root.children):
+        if child is None:
+            continue
+        # If there's no overlap between the worst distance sphere and this octant
+        if not overlaps(query, result_set.worstDist(), child):
+            continue
+        if octree_radius_search_fast(child, db, result_set, query):
+            return True
     # 屏蔽结束
 
     return inside(query, result_set.worstDist(), root)
