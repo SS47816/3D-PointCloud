@@ -34,9 +34,10 @@ def main():
     # root_dir = '../../' # 数据集路径
     # cat = os.listdir(root_dir)
     # iteration_num = len(cat)
-    iteration_num = 1
+    iteration_num = 100
     filename = '../000000.bin'
 
+    print('For', iteration_num, 'iterations, the avg time taken is:')
     print("octree --------------")
     construction_time_sum = 0
     knn_time_sum = 0
