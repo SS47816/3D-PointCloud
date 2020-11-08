@@ -236,7 +236,35 @@ def octree_radius_search(root: Octant, db: np.ndarray, result_set: RadiusNNResul
 
     # 作业6
     # 屏蔽开始
-    
+    # If the octant is a leaf and there are points in it
+    if root.is_leaf and len(root.point_indices) > 0:
+        leaf_points = db[root.point_indices, :]
+        diff = np.linalg.norm(np.expand_dims(query, 0) - leaf_points, axis=1)
+        for i in range(diff.shape[0]):
+            result_set.add_point(diff[i], root.point_indices[i])
+        return inside(query, result_set.worstDist(), root)
+
+    # Find the nearst child
+    morton_code = 0
+    if query[0] > root.center[0]:
+        morton_code = morton_code | 1
+    if query[1] > root.center[1]:
+        morton_code = morton_code | 2
+    if query[2] > root.center[2]:
+        morton_code = morton_code | 4
+
+    if octree_radius_search(root.children[morton_code], db, result_set, query):
+        return True
+
+    for c, child in enumerate(root.children):
+        if child is None:
+            continue
+        # If there's no overlap between the worst distance sphere and this octant
+        if not overlaps(query, result_set.worstDist(), child):
+            continue
+        if octree_radius_search_fast(child, db, result_set, query):
+            return True
+
     # 屏蔽结束
 
     # final check of if we can stop search
