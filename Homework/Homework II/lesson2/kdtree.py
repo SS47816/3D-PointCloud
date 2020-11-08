@@ -145,6 +145,7 @@ def kdtree_knn_search(root: Node, db: np.ndarray, result_set: KNNResultSet, quer
     if root is None:
         return False
 
+    # If the node is a leaf, compare the query point to all the points inside
     if root.is_leaf():
         # compare the contents of a leaf
         leaf_points = db[root.point_indices, :]
@@ -156,6 +157,18 @@ def kdtree_knn_search(root: Node, db: np.ndarray, result_set: KNNResultSet, quer
     # 作业2
     # 提示：仍通过递归的方式实现搜索
     # 屏蔽开始
+    # If the query point is on the left hand side of the splitting plane
+    if query[root.axis] <= root.value:
+        kdtree_knn_search(root.left, db, result_set, query) # Search left
+        # If the current worst distance reaches beyond the splitting plane
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_knn_search(root.right, db, result_set, query) # Search the other side
+    # If the query point is on the right hand side of the splitting plane
+    else:
+        kdtree_knn_search(root.right, db, result_set, query) # Search left
+        # If the current worst distance reaches beyond the splitting plane
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_knn_search(root.left, db, result_set, query) # Search the other side
 
     # 屏蔽结束
 
