@@ -4,6 +4,8 @@ import numpy as np
 from numpy import *
 import pylab
 import random,math
+import pandas as pd
+from sklearn.cluster import KMeans
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
@@ -14,31 +16,151 @@ class GMM(object):
     def __init__(self, n_clusters, max_iter=50):
         self.n_clusters = n_clusters
         self.max_iter = max_iter
+        self.__priori = None
+        self.__posteriori = None
+        self.__mu = None
+        self.__cov = None
     
-    # 屏蔽开始
-    # 更新W
-    
 
-    # 更新pi
- 
-        
-    # 更新Mu
+    def get_mu(self):
+        """
+        Get mu
+        """
+        return np.copy(self.__mu)
 
 
-    # 更新Var
+    def __init_random(self, data):
+        """
+        Set initial GMM params with random initialization
+        Parameters
+        ----------
+        data: numpy.ndarray
+            Training set as N-by-D numpy.ndarray
+        """
+        N, _ = data.shape
+
+        # init posteriori:
+        self.__posteriori = np.zeros((self.__K, N))
+        # init mu:
+        self.__mu = data[np.random.choice(np.arange(N), size=self.__K, replace=False)]
+        # init covariances
+        self.__cov = np.asarray([np.cov(data, rowvar=False)] * self.__K)
+        # init priori:
+        self.__priori = np.ones((self.__K, 1)) / self.__K
 
 
-    # 屏蔽结束
+    def __init_kmeans(self, data):
+        """
+        Set initial GMM params with K-Means initialization
+        Parameters
+        ----------
+        data: numpy.ndarray
+            Training set as N-by-D numpy.ndarray
+        """
+        N, _ = data.shape
+
+        # init kmeans:
+        k_means = KMeans(init='k-means++', n_clusters=self.__K)
+        k_means.fit(data)
+        category = k_means.labels_
+
+        # init posteriori:
+        self.__posteriori = np.zeros((self.__K, N))
+        # init mu:
+        self.__mu = k_means.cluster_centers_
+        # init covariances
+        self.__cov = np.asarray(
+            [np.cov(data[category == k], rowvar=False) for k in range(self.__K)]
+        )
+        # init priori:
+        value_counts = pd.Series(category).value_counts()
+        self.__priori = np.asarray(
+            [value_counts[k]/N for k in range(self.__K)]
+        ).reshape((self.__K, 1))
+
+
+    def __expectation_step(self, data):
+        """
+        Update posteriori
+        Parameters
+        ----------
+        data: numpy.ndarray
+            Training set as N-by-D numpy.ndarray
+        """
+        # expectation:
+        for k in range(self.__K):
+            self.__posteriori[k] = multivariate_normal.pdf(
+                data, 
+                mean=self.__mu[k], cov=self.__cov[k]
+            )
+        # get posteriori:
+        self.__posteriori = np.dot(
+            np.diag(self.__priori.ravel()), self.__posteriori
+        )
+        # normalize:
+        self.__posteriori /= np.sum(self.__posteriori, axis=0)
+
+    def __maximization_step(self, data, N_k, N):
+        """
+        Update posteriori
+        Parameters
+        ----------
+        data: numpy.ndarray
+            Training set as N-by-D numpy.ndarray
+        """
+        self.mu = np.asarray(
+            [np.dot(self.__posteriori[k], data)/N_k[k] for k in range(self.__K)]
+        )
+        self.__cov = np.asarray(
+            [
+                np.dot(
+                    (data - self.__mu[k]).T, 
+                    np.dot(np.diag(self.__posteriori[k].ravel()), data - self.__mu[k])
+                )/N_k[k] for k in range(self.__K)
+            ]  
+        )
+        self.__priori = (N_k/N).reshape((self.__K, 1))
+
     
     def fit(self, data):
         # 作业3
         # 屏蔽开始
-
+        
+        N, _ = data.shape
+        self.__init_kmeans(data)
+        
+        for i in range(self.__max_iter):
+            # Expectation
+            self.__expectation_step(data)
+            # Count the number of points in the cluster
+            N_k = np.sum(self.__posteriori, axis=1)
+            # Maximization
+            self.__maximization_step(data, N_k, N)
 
         # 屏蔽结束
     
+    
     def predict(self, data):
+        """
+        Classify input data
+
+        Parameters
+        ----------
+        data: numpy.ndarray
+            Testing set as N-by-D numpy.ndarray
+
+        Returns
+        ----------
+        result: numpy.ndarray
+            data labels as (N, ) numpy.ndarray
+        """
         # 屏蔽开始
+
+        self.__expectation_step(data)
+
+        result = np.argmax(self.__posteriori, axis = 0)
+
+        return result
 
         # 屏蔽结束
 
