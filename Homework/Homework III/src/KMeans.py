@@ -1,5 +1,3 @@
-#!/opt/conda/envs/03-clustering/bin/python
-
 # 文件功能： 实现 K-Means 算法
 
 import numpy as np
@@ -9,45 +7,141 @@ import matplotlib.pyplot as plt
 
 class KMeans(object):
     """
-    KMeans with both random and KMeans++ initialization
+    KMeans Clustering Algorithm with both random and KMeans++ initialization
 
     Parameters
     ----------
-    n_clusters: int
-        Number of clusters 
-    tolerance: float
-        Initial splitting axis
-    max_iter: int
-        Maximum number of iterations
+    n_clusters (int): Number of clusters (K)
 
-    Attributes
-    ----------
+    tolerance (float): Initial splitting axis
 
+    max_iter (int): Maximum number of iterations
     """
-    # k是分组数；tolerance‘中心点误差’；max_iter是迭代次数
+
     def __init__(self, n_clusters=2, tolerance=0.01, max_iter=300):
         self.__K = n_clusters
         self.__tolerance = tolerance
         self.__max_iter = max_iter
         self.__centroids = None
 
-    def fit(self, data):
+    @staticmethod
+    def __tolerance(data, tol):
         """
-        Estimate the K centroids
+        Return a tolerance which is independent of the dataset
 
         Parameters
         ----------
-        data: numpy.ndarray
-            Training set as N-by-D numpy.ndarray
+        data (numpy.ndarray): Training set as N-by-D numpy.ndarray
+        
+        tol (float): Relative tolerance value
+
+        Returns
+        ----------
+        tolerance (float): Absolute tolerance value
+        """
+
+        variances = np.var(data, axis=0)
+        return np.mean(variances) * tol
+    
+    @staticmethod
+    def __assign(data, centroids):
+        """
+        Assign data point to centroids of minimum L2 distance
+
+        Parameters
+        ----------
+        data (numpy.ndarray): Training set as N-by-D numpy.ndarray
+        centroids: numpy.ndarray
+            Centroids as N-by-D numpy.ndarray
+        """
+
+        return np.argmin(np.linalg.norm(centroids - data, axis=1))
+
+    def get_centroids(self):
+        """
+        Get centroids
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        ----------
+        centroids (numpy.ndarray): cluster centroids as numpy.ndarray
+        """
+
+        return np.copy(self.__centroids)
+
+    def __get_init_centroid_random(self, data):
+        """
+        Get initial centroids using random selection
+
+        Parameters
+        ----------
+        data (numpy.ndarray): Training set as N-by-D numpy.ndarray
+
+        Returns
+        ----------
+        centroids (numpy.ndarray): cluster centroids as numpy.ndarray
+        """
+        N, _ = data.shape
+
+        idx_centroids = np.random.choice(np.arange(N), size=self.__K, replace=False)
+
+        centroids = data[idx_centroids]
+
+        return centroids
+
+    def __get_init_centroid_kmeanspp(self, data):
+        """
+        Get initial centroids using KMeans++ selection
+
+        Parameters
+        ----------
+        data (numpy.ndarray): Training set as N-by-D numpy.ndarray
+
+        Returns
+        ----------
+        centroids (numpy.ndarray): cluster centroids as numpy.ndarray
+        """
+        N, _ = data.shape
+
+        # select the first centroid by random choice:
+        centroids = data[np.random.choice(np.arange(N), size=1, replace=False)]
+
+        # for the remaining centroids, select by prob based on minimum distance to existing centroids:
+        for _ in range(1, self.__K):
+            # find minimum distance to existing centroids for each poit
+            distances = np.asarray(
+                [
+                    np.min(np.linalg.norm(d - centroids, axis=1))**2 for d in data
+                ]
+            )
+            # generate cumulative probability:
+            probs = distances / np.sum(distances)
+            cum_probs = np.cumsum(probs)
+            # select new centroid:
+            centroids = np.vstack(
+                (centroids, data[np.searchsorted(cum_probs, random.random())])
+            )
+        
+        return centroids
+
+    def fit(self, data):
+        """
+        Fit the model with the given data, initialise `K` number of centroids
+
+        Parameters
+        ----------
+        data (numpy.ndarray): Training set as N-by-D numpy.ndarray
 
         Returns
         ----------
         None
-
         """
-        # TODO 01: implement KMeans fit 
-        # get input size:
+
         N, D = data.shape
+
         # format as pandas dataframe:
         __data = pd.DataFrame(
             data = data,
@@ -75,7 +169,6 @@ class KMeans(object):
             diff = (new_centroids - self.__centroids).ravel()
             squared_diff = np.dot(diff, diff)
             
-
             # update centroids:
             self.__centroids = new_centroids
 
@@ -108,95 +201,8 @@ class KMeans(object):
 
         return result
 
-    def get_centroids(self):
-        """
-        Get centroids
+    
 
-        Parameters
-        ----------
-        None
-
-        Returns
-        ----------
-        centroids: numpy.ndarray
-            cluster centroids as numpy.ndarray
-
-        """
-        return np.copy(self.__centroids)
-
-    def __get_init_centroid_random(self, data):
-        """
-        Get initial centroids using random selection
-
-        Parameters
-        ----------
-        data: numpy.ndarray
-            Training set as N-by-D numpy.ndarray
-
-        """
-        N, _ = data.shape
-
-        idx_centroids = np.random.choice(np.arange(N), size=self.__K, replace=False)
-
-        centroids = data[idx_centroids]
-
-        return centroids
-
-    def __get_init_centroid_kmeanspp(self, data):
-        """
-        Get initial centroids using KMeans++ selection
-
-        Parameters
-        ----------
-        data: numpy.ndarray
-            Training set as N-by-D numpy.ndarray
-
-        """
-        N, _ = data.shape
-
-        # select the first centroid by random choice:
-        centroids = data[np.random.choice(np.arange(N), size=1, replace=False)]
-
-        # for the remaining centroids, select by prob based on minimum distance to existing centroids:
-        for _ in range(1, self.__K):
-            # find minimum distance to existing centroids for each poit
-            distances = np.asarray(
-                [
-                    np.min(np.linalg.norm(d - centroids, axis=1))**2 for d in data
-                ]
-            )
-            # generate cumulative probability:
-            probs = distances / np.sum(distances)
-            cum_probs = np.cumsum(probs)
-            # select new centroid:
-            centroids = np.vstack(
-                (centroids, data[np.searchsorted(cum_probs, random.random())])
-            )
-        
-        return centroids
-
-    @staticmethod
-    def __assign(data, centroids):
-        """
-        Assign data point to centroids of minimum L2 distance
-
-        Parameters
-        ----------
-        data: numpy.ndarray
-            Training set as N-by-D numpy.ndarray
-        centroids: numpy.ndarray
-            Centroids as N-by-D numpy.ndarray
-
-        """
-        return np.argmin(np.linalg.norm(centroids - data, axis=1))
-
-    @staticmethod
-    def __tolerance(data, tol):
-        """
-        Return a tolerance which is independent of the dataset
-        """
-        variances = np.var(data, axis=0)
-        return np.mean(variances) * tol
 
 if __name__ == '__main__':
     # create test set:
