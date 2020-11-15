@@ -131,18 +131,18 @@ for i_dataset, (dataset, algo_params) in enumerate(datasets):
     
     clustering_algorithms = (
         ('My_KMeans', my_kmeans),
-        ('My_GMM', my_gmm),
-        ('My_SpectralClustering', my_spectral),
         ('MiniBatchKMeans', two_means),
-        ('AffinityPropagation', affinity_propagation),
-        ('MeanShift', ms),
+        ('My_GMM', my_gmm),
+        ('GaussianMixture', gmm),
+        ('My_SpectralClustering', my_spectral),
         ('SpectralClustering', spectral),
+        ('MeanShift', ms),
+        ('DBSCAN', dbscan),
+        ('AffinityPropagation', affinity_propagation),
         ('Ward', ward),
         ('AgglomerativeClustering', average_linkage),
-        ('DBSCAN', dbscan),
         ('OPTICS', optics),
-        ('Birch', birch),
-        ('GaussianMixture', gmm)
+        ('Birch', birch)
     )
 
     # 此处是内层循环，遍历每种算法

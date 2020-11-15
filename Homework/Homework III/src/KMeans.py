@@ -18,7 +18,7 @@ class KMeans(object):
     max_iter (int): Maximum number of iterations
     """
 
-    def __init__(self, n_clusters=2, tolerance=0.01, max_iter=300):
+    def __init__(self, n_clusters=2, tolerance=0.001, max_iter=100):
         self.__K = n_clusters
         self.__tolerance = tolerance
         self.__max_iter = max_iter
