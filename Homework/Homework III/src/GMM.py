@@ -14,8 +14,8 @@ plt.style.use('seaborn')
 
 class GMM(object):
     def __init__(self, n_clusters, max_iter=50):
-        self.n_clusters = n_clusters
-        self.max_iter = max_iter
+        self.__K = n_clusters
+        self.__max_iter = max_iter
         self.__priori = None
         self.__posteriori = None
         self.__mu = None
@@ -139,7 +139,7 @@ class GMM(object):
 
         # 屏蔽结束
     
-    
+
     def predict(self, data):
         """
         Classify input data

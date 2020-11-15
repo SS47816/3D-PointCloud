@@ -15,7 +15,7 @@ from sklearn.neighbors import kneighbors_graph
 from sklearn.preprocessing import StandardScaler
 from itertools import cycle, islice
 
-from KMeans import K_Means
+from KMeans import KMeans
 from GMM import GMM
 
 np.random.seed(0)
@@ -103,7 +103,7 @@ for i_dataset, (dataset, algo_params) in enumerate(datasets):
     # 初始化所有聚类算法
     # ============
     # 自编的K-Means、GMM算法
-    my_kmeans = K_Means(n_clusters=params['n_clusters'])
+    my_kmeans = KMeans(n_clusters=params['n_clusters'])
     my_gmm = GMM(n_clusters=params['n_clusters'])
     # sklearn中自带的算法
     ms = cluster.MeanShift(bandwidth=bandwidth, bin_seeding=True)
