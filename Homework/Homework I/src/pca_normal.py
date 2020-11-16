@@ -1,9 +1,10 @@
 # 实现PCA分析和法向量计算，并加载数据集中的文件进行验证
 
-import open3d as o3d 
 import os
+import time
 import numpy as np
 from pyntcloud import PyntCloud
+import open3d as o3d
 
 
 def PCA(data: PyntCloud.points, correlation: bool=False, sort: bool=True) -> np.array:
@@ -59,11 +60,16 @@ def main():
         # Convert to PyntCloud and Open3D formats
         point_cloud_o3d = o3d.geometry.PointCloud()
         point_cloud_o3d.points = o3d.utility.Vector3dVector(pointcloud)
-        point_cloud_pynt = PyntCloud.from_instance("open3d", point_cloud_o3d)
-        points = point_cloud_pynt.points
+        # point_cloud_pynt = PyntCloud.from_instance("open3d", point_cloud_o3d)
+        # points = point_cloud_pynt.points
 
         # 用PCA分析点云主方向
+        N = pointcloud.shape[0]
+
+        t0 = time.time()
         w, v = PCA(pointcloud)
+        t1 = time.time()
+        print('###### PCA time taken (per 1k points): ', round((t1 - t0)/N*1000, 5))
         point_cloud_vector = v[:, 2] #点云主方向对应的向量
         print('the main orientation of this pointcloud is: ', point_cloud_vector)
         principle_axis = np.concatenate((np.array([[0.,0.,0.]]), v.T))
@@ -85,9 +91,13 @@ def main():
         # 循环计算每个点的法向量
         # 由于最近邻搜索是第二章的内容，所以此处允许直接调用open3d中的函数
         # Feed the pointcloud into a kdtree structure
+        t0 = time.time()
         pcd_tree = o3d.geometry.KDTreeFlann(point_cloud_o3d)
+        t1 = time.time()
+        print('###### KDTreeFlann time taken (per 1k points): ', round((t1 - t0)/N*1000, 5))
         normals = []
-        N = pointcloud.shape[0]
+        
+        t0 = time.time()
         for index in range(N):
             # For each point, search for its nearest k neighbors
             [_, idx, _] = pcd_tree.search_knn_vector_3d(pc_view.points[index], 21)
@@ -96,23 +106,41 @@ def main():
             _, v = PCA(neighbor_pc)
             normals.append(v[:, 2])
 
+        t1 = time.time()
+        print('###### My Normal Estimation time taken (per 1k points): ', round((t1 - t0)/N*1000, 5))
+
+        t0 = time.time()
+        point_cloud_o3d.estimate_normals()
+        t1 = time.time()
+        print('###### Open3D Normal Estimation time taken (per 1k points): ', round((t1 - t0)/N*1000, 5))
+
         # 屏蔽结束
 
         # 此处把法向量存放在了normals中
+        o3d_normals = np.asarray(point_cloud_o3d.normals, dtype=np.float64)
         normals = np.array(normals, dtype=np.float64)
         point_cloud_o3d.normals = o3d.utility.Vector3dVector(normals)
 
+        # build pca line set:
         points = np.vstack((pointcloud, pointcloud + 0.03*normals))
         lines = [[i, i+N] for i in range(N)]
         colors = np.zeros((N, 3)).tolist()
-        # build pca line set:
+        surface_normals_my = o3d.geometry.LineSet(
+            points=o3d.utility.Vector3dVector(points),
+            lines=o3d.utility.Vector2iVector(lines),
+        )
+        surface_normals_my.colors = o3d.utility.Vector3dVector(colors)
+
+        points = np.vstack((pointcloud, pointcloud + 0.03*o3d_normals))
+        lines = [[i, i+N] for i in range(N)]
+        colors = np.full((N, 3), 0.5).tolist()
         surface_normals_o3d = o3d.geometry.LineSet(
             points=o3d.utility.Vector3dVector(points),
             lines=o3d.utility.Vector2iVector(lines),
         )
         surface_normals_o3d.colors = o3d.utility.Vector3dVector(colors)
 
-        o3d.visualization.draw_geometries([pc_view, axis, pr_view, surface_normals_o3d]) # point_cloud_o3d, 
+        o3d.visualization.draw_geometries([pc_view, axis, pr_view, surface_normals_my, surface_normals_o3d]) # point_cloud_o3d, 
 
 
 if __name__ == '__main__':
