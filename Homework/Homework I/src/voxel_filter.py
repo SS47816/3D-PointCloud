@@ -1,8 +1,9 @@
 # 实现voxel滤波，并加载数据集中的文件进行验证
-
-import open3d as o3d 
+ 
 import os
+import time
 import numpy as np
+import open3d as o3d
 # from pyntcloud import PyntCloud
 
 def voxel_filter(point_cloud: np.ndarray, leaf_size: float, method: str='centroid') -> np.array:
@@ -65,13 +66,29 @@ def main():
         point_cloud_o3d.points = o3d.utility.Vector3dVector(pointcloud)
 
         # 调用voxel滤波函数，实现滤波
+        N = pointcloud.shape[0]
+
+        t0 = time.time()
         filtered_cloud = voxel_filter(pointcloud, 0.08, 'centroid')
+        t1 = time.time()
+        print('###### My Voxel Downsample time taken (per 1k points): ', round((t1 - t0)/N*1000, 5))
         print('Number of points in the filtered pointcloud:', filtered_cloud.shape[0])
 
+        # Use Open3D functions to downsample the pointcloud
+        t0 = time.time()
+        filtered_cloud_o3d = point_cloud_o3d.voxel_down_sample(0.08)
+        t1 = time.time()
+        print('###### Open3D Voxel Downsample time taken (per 1k points): ', round((t1 - t0)/N*1000, 5))
+        # Translate the filtered pointcloud
+        translate_vector = -1.2*(filtered_cloud_o3d.get_max_bound() - filtered_cloud_o3d.get_min_bound())
+        translate_vector[0] = 0.0
+        translate_vector[2] = 0.0
+        filtered_cloud_o3d.translate(translate_vector)
+
         # 显示滤波后的点云
-        filtered_cloud_o3d = o3d.geometry.PointCloud()
-        filtered_cloud_o3d.points = o3d.utility.Vector3dVector(filtered_cloud)
-        o3d.visualization.draw_geometries([point_cloud_o3d, filtered_cloud_o3d])
+        filtered_cloud_my = o3d.geometry.PointCloud()
+        filtered_cloud_my.points = o3d.utility.Vector3dVector(filtered_cloud)
+        o3d.visualization.draw_geometries([point_cloud_o3d, filtered_cloud_my, filtered_cloud_o3d])
 
 if __name__ == '__main__':
     main()
