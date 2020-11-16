@@ -93,3 +93,60 @@ for i in np.unique(index):
 ![hw1-bathtub-02](pics/hw1-bathtub-02.png)
 
 ![hw1-bed-02](pics/hw1-bed-02.png)
+
+## Comparison Results
+
+Comparison between Self-implemented algorithms with the Open3D versions
+
+**Note:** All results are normalized to the time taken to process 1000 points (in seconds)
+
+
+
+### Test 1: PCA
+
+#### My PCA
+
+* 4e-05 second
+
+#### Open3D
+
+* No corresponding function
+
+
+
+### Test 2: KDTree Construction
+
+#### My Version
+
+* No corresponding function
+
+#### Open3D `KDTreeFlann`
+
+* 0.00021 second
+
+
+
+### Test 3: Surface Normal Estimation
+
+#### My Version
+
+* 0.069 second
+
+#### Open3D
+
+* 0.00066 second (100x faster)
+
+
+
+### Test 4: Surface Normal Estimation
+
+#### My Version
+
+* 0.069 second
+
+#### Open3D
+
+* 0.00066 second (100x faster)
+
+
+
