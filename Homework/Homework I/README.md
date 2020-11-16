@@ -138,15 +138,15 @@ Comparison between Self-implemented algorithms with the Open3D versions
 
 
 
-### Test 4: Surface Normal Estimation
+### Test 4: Voxel Down-sampling
 
 #### My Version
 
-* 0.069 second
+* 0.00312 second
 
 #### Open3D
 
-* 0.00066 second (100x faster)
+* 5e-05 second (60x faster)
 
 
 
