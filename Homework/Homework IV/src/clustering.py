@@ -10,6 +10,8 @@ from sklearn import cluster, datasets, mixture
 from itertools import cycle, islice
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import open3d as o3d
+import time
 
 # 功能：从kitti的.bin格式点云文件中读取点云
 # 输入：
@@ -34,11 +36,49 @@ def read_velodyne_bin(path):
 #     data: 一帧完整点云
 # 输出：
 #     segmengted_cloud: 删除地面点之后的点云
-def ground_segmentation(data):
+def ground_segmentation(data: np.ndarray) -> np.ndarray :
+    """
+    Parameters
+    ----------
+    `data`: numpy.ndarray input pointcloud
+
+    Returns
+    ----------
+    `segmengted_cloud`: numpy.ndarray
+
+    """
+    
     # 作业1
     # 屏蔽开始
+    N, _ = data.shape
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(data)
+    
+    # keep points whose surface normal is approximate to z-axis for ground plane segementation:
+    # pointcloud.estimate_normals(
+    #     search_param = o3d.geometry.KDTreeSearchParamHybrid(
+    #         radius = 0.50, max_nn = 9
+    #     )
+    # )
+    # normals = np.asarray(pointcloud.normals)
+    # angular_distance_to_z = np.abs(normals[:, 2])
+    # filtered_idxs = angular_distance_to_z > np.cos(np.pi/6.0)
+    # filtered_points = pointcloud[filtered_idxs]
 
-
+    # Filter the ground plane using RANSAC
+    plane, inlier_indices = pcd.segment_plane(
+                                distance_threshold = 0.2, 
+                                ransac_n = 5, 
+                                num_iterations = 50
+                                )
+    t0 = time.time()
+    pcd_filtered = pcd.select_by_index(inlier_indices, invert=True)
+    # pcd_ground = pcd.select_by_index(inlier_indices, invert=False)
+    t1 = time.time()
+    print('###### Open3D Normal Estimation time taken (per 1k points): ', round((t1 - t0)/N*1000, 5))
+    
+    segmengted_cloud = np.asarray(pcd_filtered.points())
+    
     # 屏蔽结束
 
     print('origin data points num:', data.shape[0])
@@ -53,7 +93,7 @@ def ground_segmentation(data):
 def clustering(data):
     # 作业2
     # 屏蔽开始
-
+    
 
     # 屏蔽结束
 
@@ -74,7 +114,7 @@ def plot_clusters(data, cluster_index):
     plt.show()
 
 def main():
-    root_dir = 'data/' # 数据集路径
+    root_dir = '../../../kitti_point_clouds/' # 数据集路径
     cat = os.listdir(root_dir)
     cat = cat[1:]
     iteration_num = len(cat)
